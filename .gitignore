@@ -4,7 +4,6 @@
 
 # User-specific stuff
 .idea
-go.sum
 # Go workspace file
 go.work
 

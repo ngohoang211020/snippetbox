@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/ngohoang211020/snippetbox/internal/models"
 	"log"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ type config struct {
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -29,17 +31,14 @@ func main() {
 	// and some short help text explaining what the flag controls. The value of the flag will be stored in the addr variable at runtime.
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
+
+	//use the parseTime=true parameter in our DSN to force it to convert TIME and DATE fields to time.Time. Otherwise it returns these as []byte objects
 	flag.StringVar(&cfg.dsn, "dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
 	// Use log.New() to create a logger for writing information messages. This takes three parameters: the destination to write the logs to (os.Stdout), a string prefix for message (INFO followed by a tab), and flags to indicate what additional information to include (local date and time). Note that the flags are joined using the bitwise OR operator |.
 	infoLog := log.New(os.Stderr, "INFO\t", log.Ldate|log.Ltime)
 	// Create a logger for writing error messages in the same way, but use stderr as the destination and use the log.Lshortfile flag to include the relevant file name and line number.
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	// Initialize a new instance of our application struct, containing the dependencies.
-	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-	}
 
 	// Importantly, we use the flag.Parse() function to parse the command-line flag.
 	// This reads in the command-line flag value and assigns it to the addr
@@ -55,6 +54,13 @@ func main() {
 	// We also defer a call to db.Close(), so that the connection pool is closed
 	// before the main() function exits.
 	defer db.Close()
+
+	// Initialize a new instance of our application struct, containing the dependencies.
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+		snippets: &models.SnippetModel{DB: db},
+	}
 
 	srv := &http.Server{
 		Addr:     cfg.addr,
