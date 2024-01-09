@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
+	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +12,7 @@ import (
 type config struct {
 	addr      string
 	staticDir string
+	dsn       string
 }
 
 // Define an application struct to hold the application-wide dependencies for the
@@ -26,6 +29,7 @@ func main() {
 	// and some short help text explaining what the flag controls. The value of the flag will be stored in the addr variable at runtime.
 	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
+	flag.StringVar(&cfg.dsn, "dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
 	// Use log.New() to create a logger for writing information messages. This takes three parameters: the destination to write the logs to (os.Stdout), a string prefix for message (INFO followed by a tab), and flags to indicate what additional information to include (local date and time). Note that the flags are joined using the bitwise OR operator |.
 	infoLog := log.New(os.Stderr, "INFO\t", log.Ldate|log.Ltime)
@@ -36,12 +40,21 @@ func main() {
 		errorLog: errorLog,
 		infoLog:  infoLog,
 	}
+
 	// Importantly, we use the flag.Parse() function to parse the command-line flag.
 	// This reads in the command-line flag value and assigns it to the addr
 	// variable. You need to call this *before* you use the addr variable
 	// otherwise it will always contain the default value of ":4000". If any errors are
 	// encountered during parsing the application will be terminated
 	flag.Parse()
+
+	db, err := openDB(cfg.dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+	// We also defer a call to db.Close(), so that the connection pool is closed
+	// before the main() function exits.
+	defer db.Close()
 
 	srv := &http.Server{
 		Addr:     cfg.addr,
@@ -51,6 +64,17 @@ func main() {
 
 	infoLog.Printf("Starting server on %s", cfg.addr)
 	// Call the ListenAndServe() method on our new http.Server struct.
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLog.Fatalln(err)
+}
+
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
 }
