@@ -14,8 +14,9 @@ import (
 // If the type that you’re yielding between {{ }} tags has methods defined against it,
 // you can call these methods (so long as they are exported and they return only a single value — or a single value and an error).
 type templateData struct {
-	Snippet  *models.Snippet
-	Snippets []*models.Snippet
+	CurrentYear int
+	Snippet     *models.Snippet
+	Snippets    []*models.Snippet
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
