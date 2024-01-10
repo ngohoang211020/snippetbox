@@ -19,25 +19,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, snippets := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippets)
-	}
-	//files := []string{
-	//	"./ui/html/base.tmpl.html",
-	//	"./ui/html/pages/home.tmpl.html",
-	//	"./ui/html/partials/nav.tmpl.html",
-	//}
-	//ts, err := template.ParseFiles(files...)
-	//if err != nil {
-	//	app.serverError(w, err)
-	//	return
-	//}
-	//
-	//err = ts.ExecuteTemplate(w, "base", nil)
-	//if err != nil {
-	//	app.serverError(w, err)
-	//	return
-	//}
+	app.render(w, http.StatusOK, "home.tmpl.html", &templateData{
+		Snippets: snippets})
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +40,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%+v", snippet)
+	app.render(w, http.StatusOK, "view.tmpl.html", &templateData{
+		Snippet: snippet,
+	})
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
@@ -83,8 +68,4 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the user to the relevant page for the snippet.
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
-}
-
-func (app *application) homeHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("This is my home page"))
 }
