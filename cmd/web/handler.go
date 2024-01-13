@@ -64,23 +64,9 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 // Rename this handler to snippetCreatePost.
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	// Checking if the request method is a POST is now superfluous and can be
-	// removed, because this is done automatically by httprouter.
-	err := r.ParseForm()
-	// Create an instance of the snippetCreateForm struct containing the values
-	// from the form and an empty map for any validation errors.
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
+	var form snippetCreateForm
 
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
-	}
-
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
@@ -101,7 +87,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	id, err := app.snippets.Insert(form.Title, form.Content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 
 	if err != nil {
 		app.serverError(w, err)
@@ -117,9 +103,11 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 // exported (i.e. start with a capital letter). This is because struct fields
 // must be exported in order to be read by the html/template package when
 // rendering the template.
+
+// The struct tag `form:"-"` tells the decoder to completely ignore a field during decoding.
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
-	validator.Validator
+	Title               string `json:"title"`
+	Content             string `json:"content"`
+	Expires             int    `json:"expires"`
+	validator.Validator `json:"-"`
 }
