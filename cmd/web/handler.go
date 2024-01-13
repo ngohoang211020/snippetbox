@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/ngohoang211020/snippetbox/internal/models"
+	"github.com/ngohoang211020/snippetbox/internal/validator"
 	"net/http"
 	"strconv"
 )
@@ -54,40 +55,54 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
+	data := app.newTemplateData(r)
+	data.Form = snippetCreateForm{
+		Expires: 365,
 	}
-
-	// Create some variables holding dummy data. We'll remove these later on
-	// during the build.
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
-
-	// Pass the data to the SnippetModel.Insert() method, receiving the
-	// ID of the new record back.
-	id, err := app.snippets.Insert(title, content, expires)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	// Redirect the user to the relevant page for the snippet.
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	app.render(w, http.StatusOK, "create.tmpl.html", data)
 }
 
 // Rename this handler to snippetCreatePost.
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	// Checking if the request method is a POST is now superfluous and can be
 	// removed, because this is done automatically by httprouter.
+	err := r.ParseForm()
+	// Create an instance of the snippetCreateForm struct containing the values
+	// from the form and an empty map for any validation errors.
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
+	form := snippetCreateForm{
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
+	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+
+	// Use the Valid() method to see if any of the checks failed. If they did,
+	// then re-render the template passing in the form in the same way as
+	// before.
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.tmpl.html", data)
+		return
+	}
+
+	id, err := app.snippets.Insert(form.Title, form.Content, expires)
+
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -95,4 +110,16 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	// Update the redirect path to use the new clean URL format.
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+
+// Define a snippetCreateForm struct to represent the form data and validation
+// errors for the form fields. Note that all the struct fields are deliberately
+// exported (i.e. start with a capital letter). This is because struct fields
+// must be exported in order to be read by the html/template package when
+// rendering the template.
+type snippetCreateForm struct {
+	Title   string
+	Content string
+	Expires int
+	validator.Validator
 }
