@@ -50,7 +50,6 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
-
 	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
 
@@ -93,7 +92,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		app.serverError(w, err)
 		return
 	}
-
 	// Update the redirect path to use the new clean URL format.
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
@@ -106,8 +104,8 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 // The struct tag `form:"-"` tells the decoder to completely ignore a field during decoding.
 type snippetCreateForm struct {
-	Title               string `json:"title"`
-	Content             string `json:"content"`
-	Expires             int    `json:"expires"`
-	validator.Validator `json:"-"`
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
