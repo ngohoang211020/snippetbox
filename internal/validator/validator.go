@@ -37,6 +37,14 @@ func (v *Validator) CheckField(ok bool, key, message string) {
 		v.AddFieldError(key, message)
 	}
 }
+func PermittedValue[T comparable](value T, permittedValues ...T) bool {
+	for i := range permittedValues {
+		if value == permittedValues[i] {
+			return true
+		}
+	}
+	return false
+}
 
 func NotBlank(value string) bool {
 	return strings.TrimSpace(value) != ""
@@ -45,16 +53,6 @@ func NotBlank(value string) bool {
 // MaxChars() returns true if a value contains no more than n characters.
 func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
-}
-
-// PermittedInt() returns true if a value is in a list of permitted integers.
-func PermittedInt(value int, permittedValues ...int) bool {
-	for i := range permittedValues {
-		if value == permittedValues[i] {
-			return true
-		}
-	}
-	return false
 }
 
 // Use the regexp.MustCompile() function to parse a regular expression pattern

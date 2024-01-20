@@ -26,6 +26,8 @@ func (app *application) routes() http.Handler {
 	// all URL paths that start with "/static/". For matching paths, we strip the
 	// "/static" prefix before the request reaches the file server.
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
+	// Add a new GET /ping route.
+	router.HandlerFunc(http.MethodGet, "/ping", ping)
 
 	// Create a new middleware chain containing the middleware specific to our
 	// dynamic application routes. For now, this chain will only contain the
