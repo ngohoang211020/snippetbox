@@ -24,6 +24,7 @@ type templateData struct {
 	Flash           string // Add a Flash field to the templateData struct.
 	IsAuthenticated bool
 	CSRFToken       string // Add a CSRFToken field.
+	YourAccount     *models.User
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

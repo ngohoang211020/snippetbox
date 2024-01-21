@@ -2,12 +2,14 @@
 <nav>
     <div>
         <a href='/'>Home</a>
+        <a href="/about">About</a>
         {{if .IsAuthenticated}}
         <a href='/snippet/create'>Create snippet</a>
         {{end}}
     </div>
     <div>
         {{if .IsAuthenticated}}
+        <a href="/account/view">Account</a>
         <form action='/user/logout' method='POST'>
             <!-- Include the CSRF token -->
             <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
