@@ -50,6 +50,9 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 	router.Handler(http.MethodGet, "/account/view", protected.ThenFunc(app.accountView))
 
+	router.Handler(http.MethodPost, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdatePost))
+	router.Handler(http.MethodGet, "/account/password/update", protected.ThenFunc(app.accountPasswordUpdate))
+
 	// Because secureHeaders is just a function, and the function returns a
 	// http.Handler we don't need to do anything else.
 	// Create a middleware chain containing our 'standard' middleware
